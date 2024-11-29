@@ -3,7 +3,7 @@ package memo_main;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import javax.servlet.ServletException;
@@ -22,47 +22,46 @@ public class workmemo extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
-
-		String url = "jdbc:mysql://localhost:3307/mysql?serverTimezone=Asia/Tokyo";
-
-		String user = "root";
-		String passwd = "ktcpass23";
-		
-		try (Connection con = DriverManager.getConnection(url,user,passwd)){
-		System.out.println("connect");
-		} catch (SQLException e) {
-			System.out.println(e);
-		}
-		
-		
-		
-		
-		
-		request.setCharacterEncoding("UTF8");
-        String email = request.getParameter("email");    
-		String username = request.getParameter("username");
+        String username = request.getParameter("username");
+        String email = request.getParameter("email");
         String password = request.getParameter("password");
         
-        // 取得したパラメータを使用した処理
-        response.setContentType("text/html;charset=UTF-8");
-        
-        PrintWriter out = response.getWriter();
-        
-        out.println("Username: " + username);
-        out.println("Password: " + password);
-        out.println("Password: " + email);
-        out.println("<!DOCTYPE html>");
-        out.println("<html>");
-        out.println("<head>");
-        out.println("<meta charset=\"UTF-8\">");
-        out.println("<title>memo sinin完了</title>");
-        out.println("</head>");
-        out.println("<body>");
-        out.println("<h2>登録が完了しました</h2>");
-        out.println("<a href=\"login.html\">login画面へ</a>");
-        out.println("</body>");
-        out.println("</html>");
-	}
+		Connection connection = null;
+        PreparedStatement statement = null;
 
+		
+		try (Connection con = DBconection.getConnection()){
+			String sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+            statement = con.prepareStatement(sql);
+            
+            statement.setString(1, username);
+            statement.setString(2, email);
+            statement.setString(3, password);
+            
+            int rowsInserted = statement.executeUpdate();
+            
+            response.setContentType("text/html;charset=UTF-8");
+            
+            PrintWriter out = response.getWriter();
+            if (rowsInserted > 0) {
+                out.println("<h3>ユーザー登録が完了しました</h3>");
+                out.println("<a href='login.html'>ログイン画面へ</a>");
+            } else {
+                out.println("<h3>ユーザー登録に失敗しました</h3>");
+                out.println("<a href='sinin.html'>再試行</a>");
+            }
+            } catch (SQLException e) {
+			System.out.println(e);
+		}finally{
+			try {
+				if(statement != null) statement.close();
+				if(connection != null) connection.close();
+			}catch (SQLException e) {
+                e.printStackTrace();
+            }
+		}
+	}
 }
+		
+		
+		
